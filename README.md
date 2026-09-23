@@ -81,7 +81,7 @@ NPU 上の処理時間を演算ごとに測ると（`GGML_HEXAGON_PROFILE=1`）�
 
 | 項目 | バージョン |
 |---|---|
-| PC | Dell XPS 13 9345（Snapdragon X Elite X1E80100） |
+| PC | Dell XPS 13 9345（Snapdragon X Elite X1E-80-100） |
 | OS | Windows 11 Home 10.0.26200（ARM64）、Secure Boot オン |
 | NPU ドライバ | 30.0.220.3000 |
 | Visual Studio | 2026 Community 18.4（MSVC ARM64） |
