@@ -1,5 +1,6 @@
+# Only for SNPU_MODE=self-signed (README appendix). Not needed for the default 'signed' mode.
 # Creates a self-signed code-signing certificate and trusts it machine-wide.
-# Run in an ELEVATED PowerShell, after test signing is enabled (see README step 2).
+# Run in an ELEVATED PowerShell, after test signing is enabled.
 # makecert shows two password dialogs: set a password, then enter it again.
 . "$PSScriptRoot\common.ps1"
 

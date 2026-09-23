@@ -1,5 +1,5 @@
-# Builds stable-diffusion.cpp (sd-cli / sd-server) against llama.cpp's ggml with the Hexagon backend,
-# then stages the HTP libraries (v73..v81) plus the .inf into build-npu\htp for signing.
+# Builds stable-diffusion.cpp (sd-cli / sd-server) against llama.cpp's ggml with the Hexagon backend.
+# In 'self-signed' mode it also stages the self-built HTP libraries (v73..v81) plus the .inf for signing.
 . "$PSScriptRoot\common.ps1"
 
 $vcvars = Find-VsArm64
@@ -44,13 +44,18 @@ if ($LASTEXITCODE -ne 0) {
     throw "Build failed, see $log"
 }
 
-Write-Step "Staging HTP libraries into $HtpDir"
+Write-Host "`nBuilt: $BuildDir\bin\sd-cli.exe" -ForegroundColor Green
+if ($Mode -eq 'signed') {
+    # The HTP libraries built alongside are not used: the NPU loads the Microsoft-signed ones from GenieX.
+    Write-Host "Next: 50-generate.ps1 (uses the signed HTP libraries in $HtpDir)."
+    return
+}
+
+Write-Step "Staging self-built HTP libraries into $HtpDir"
 New-Item -ItemType Directory -Force $HtpDir | Out-Null
 Get-ChildItem $HtpDir -File | Remove-Item
 $skels = Get-ChildItem $BuildDir -Recurse -Filter 'libggml-htp-v*.so' | Where-Object FullName -match 'htp-v\d+-build'
 if (-not $skels) { throw 'No libggml-htp-v*.so found in the build tree.' }
 $skels | Copy-Item -Destination $HtpDir
 Copy-Item (Join-Path $LlamaDir 'ggml\src\ggml-hexagon\libggml-htp.inf') $HtpDir
-
-Write-Host "`nBuilt: $BuildDir\bin\sd-cli.exe" -ForegroundColor Green
 Write-Host "Next: run 40-sign-htp.ps1 (the NPU refuses unsigned libraries)."

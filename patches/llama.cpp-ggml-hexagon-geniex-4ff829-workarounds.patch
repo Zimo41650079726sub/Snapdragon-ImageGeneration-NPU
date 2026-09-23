@@ -1,0 +1,28 @@
+diff --git a/ggml/src/ggml-hexagon/ggml-hexagon.cpp b/ggml/src/ggml-hexagon/ggml-hexagon.cpp
+--- a/ggml/src/ggml-hexagon/ggml-hexagon.cpp
++++ b/ggml/src/ggml-hexagon/ggml-hexagon.cpp
+@@ -4954,6 +4990,12 @@ static bool ggml_hexagon_supported_mul_mat(const struct ggml_hexagon_session * s
+         return false;
+     }
+ 
++    // The GenieX v0.7.0 (llama.cpp 4ff829) HTP matmul crashes the DSP on long reductions with many rows,
++    // e.g. Krea2's K=16384 FFN down-projection at 1032 tokens. K<=12288 and <=264 rows are known to work.
++    if (src0->ne[0] > 12288 && src1->ne[1] > 264) {
++        return false;
++    }
++
+     switch (src0->type) {
+         case GGML_TYPE_Q4_0:
+         case GGML_TYPE_Q4_1:
+@@ -5085,6 +5127,11 @@ static bool ggml_hexagon_supported_binary(const struct ggml_hexagon_session * se
+     if (!ggml_can_repeat(src1, src0) || ggml_is_permuted(src1)) {
+         return false;
+     }
++    // HTP binary kernels before the #29197 rework (e.g. the Microsoft-signed GenieX v0.7.0 build of
++    // llama.cpp 4ff829) crash the DSP on rows that are not packed, such as the gate/up halves of a SwiGLU.
++    if (src0->nb[1] != src0->ne[0] * src0->nb[0] || src1->nb[1] != src1->ne[0] * src1->nb[0]) {
++        return false;
++    }
+ 
+     return true;
+ 

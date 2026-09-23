@@ -33,12 +33,16 @@ foreach ($f in $Diffusion, $Llm, $Vae) { if (-not (Test-Path $f)) { throw "Model
 
 $exe = Join-Path $BuildDir 'bin\sd-cli.exe'
 if (-not (Test-Path $exe)) { throw 'sd-cli.exe not found. Run 30-build.ps1 first.' }
-$env:PATH = "$BuildDir\bin;$HtpDir;$env:PATH"
+# Do not put $HtpDir on PATH: the GenieX folder also holds its own ggml DLLs.
+$env:PATH = "$BuildDir\bin;$env:PATH"
 
 if ($Cpu) {
     $placement = @('--backend', 'cpu')
 } else {
-    if (-not (Test-Path (Join-Path $HtpDir 'libggml-htp.cat'))) { throw 'HTP libraries are not signed. Run 40-sign-htp.ps1.' }
+    if (-not (Test-Path (Join-Path $HtpDir 'libggml-htp.cat'))) {
+        if ($Mode -eq 'signed') { throw "Signed HTP libraries missing in $HtpDir. Run 20-get-sources.ps1." }
+        throw 'HTP libraries are not signed. Run 40-sign-htp.ps1.'
+    }
     # The NPU session loads libggml-htp-v*.so (and checks the signed .cat) from this folder.
     $env:ADSP_LIBRARY_PATH = $HtpDir
     # CONCAT/CONT run at ~0.1-0.3 GB/s on the HTP today; the CPU does them far faster.

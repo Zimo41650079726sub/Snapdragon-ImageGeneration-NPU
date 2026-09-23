@@ -1,7 +1,9 @@
 # Generates libggml-htp.cat for the staged HTP libraries and signs it with your certificate.
 # Re-run after every rebuild: the catalog covers the exact bytes of each .so.
+# Only for SNPU_MODE=self-signed; the default 'signed' mode uses Microsoft-signed libraries as-is.
 param([string]$Pfx = (Join-Path $HOME 'Certs\ggml-htp-v1.pfx'))
 . "$PSScriptRoot\common.ps1"
+if ($Mode -ne 'self-signed') { Write-Host "Not needed in '$Mode' mode (the GenieX libraries are already signed)."; return }
 
 if (-not (Test-Path $Pfx)) { throw "Certificate $Pfx not found. Run 10-make-cert.ps1 first." }
 if (-not (Test-Path (Join-Path $HtpDir 'libggml-htp.inf'))) { throw 'Nothing staged. Run 30-build.ps1 first.' }
