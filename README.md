@@ -11,7 +11,7 @@ Windows on Snapdragon（Snapdragon X Elite / Hexagon NPU v73）で、[stable-dif
 
 ## 結果
 
-Dell XPS 13 9345（Snapdragon X Elite X1E80100、RAM 32GB）での実測です。512×512、seed 42、同じプロンプトで比較しました。各条件 1 回ずつの計測です。
+Dell XPS 13 9345（Snapdragon X Elite X1E80100、RAM 64GB）での実測です。512×512、seed 42、同じプロンプトで比較しました。各条件 1 回ずつの計測です。
 
 **FLUX.2 klein 4B（Q4_0）、4 ステップ**
 
