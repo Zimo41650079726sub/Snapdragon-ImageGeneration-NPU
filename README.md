@@ -46,7 +46,7 @@ A cute cat sitting in front of a small closed Japanese shop, a hand-written pape
 | Z-Image-Turbo（NPU、8 ステップ） | Krea2-Turbo-HD（NPU、8 ステップ） |
 |:---:|:---:|
 | ![Z-Image-Turbo](images/zimage_npu.png) | ![Krea2-Turbo-HD](images/krea2_npu.png) |
-| 「臨時休業」を正しく描けた | 「臨」がわずかに崩れた |
+| 「臨」がわずかに崩れた | 「臨」がわずかに崩れた |
 
 FLUX.2 klein 4B の CPU 版と NPU 版です。構図は同じですが、窓や小物などの細部が違います。この CPU 版は比較対象の WSL2 版（ビルドが別）で、NPU の FP16 計算による差と、ビルドの違いによる差の両方を含みます。同じビルドで CPU と NPU を比べたときの差は、画素あたり平均 1.7/255 でした。klein は漢字を正しく描けないモデルです。
 
