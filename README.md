@@ -112,8 +112,8 @@ Visual Studio 2026（Community で可）は Visual Studio Installer から入れ
 このリポジトリを取得し、スクリプトを実行できるようにします。スクリプトは署名されていないので、**PowerShell を開くたびに**実行ポリシーを一時的に緩めます。
 
 ```powershell
-git clone https://github.com/Zimo41650079726sub/Snapdragon-ImageGeneration-NPU.git
-cd Snapdragon-ImageGeneration-NPU
+git clone https://github.com/Zimo41650079726sub/SIGN-Snapdragon-ImageGeneration-NPU.git
+cd SIGN-Snapdragon-ImageGeneration-NPU
 Set-ExecutionPolicy -Scope Process Bypass
 .\scripts\00-check.ps1
 ```
@@ -176,7 +176,7 @@ NPU は空きメモリを 0 MiB と報告するため、自動配置（auto-fit�
 
 ## 既知の問題
 
-- **Qwen-Image-2.1 で画像の横一列に帯状のノイズが出る**：付録 A の構成で、ステップ数（20 / 30）に関係なく同じ位置に同じ形で出ました。NPU 上の特定の演算で数値が崩れていると見ていますが、原因は未特定です。Qwen-Image-2.1 は当面 `-Cpu` で使ってください。
+- **Qwen-Image-2.1 で画像の横一列に帯状のノイズが出る**：署名済み構成と付録 A の構成の両方で、ステップ数（20 / 30）に関係なく同じ位置に同じ形で出ました。NPU ライブラリの版によらないので、両方に共通する部分に原因があると見ていますが、未特定です。Qwen-Image-2.1 は当面 `-Cpu` で使ってください（NPU では 1 枚 659 秒、メモリの増加は 11.2GB でした）。
 - **NPU の CONCAT / CONT が遅い**：`GGML_HEXAGON_OPFILTER` で CPU に回して回避しています。
 - **VAE と TE は CPU**：NPU にも載せられますが、現状は逆効果です（付録 A の構成、klein、512²）。
   - TE を NPU（`te=HTP0`）：7.1 秒（CPU は約 4 秒）。画像は正常ですが、FP16 計算のため細部が変わります
