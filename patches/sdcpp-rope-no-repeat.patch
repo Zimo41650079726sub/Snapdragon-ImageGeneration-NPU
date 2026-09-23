@@ -1,0 +1,41 @@
+diff --git a/src/model/common/rope.hpp b/src/model/common/rope.hpp
+index e447849..4c20a84 100644
+--- a/src/model/common/rope.hpp
++++ b/src/model/common/rope.hpp
+@@ -1129,18 +1129,24 @@ namespace Rope {
+         int64_t offset = x->nb[2] * x->ne[2];
+         auto x_0       = ggml_view_3d(ctx, x, x->ne[0], x->ne[1], x->ne[2], x->nb[1], x->nb[2], offset * 0);  // [N * n_head, L, d_head/2]
+         auto x_1       = ggml_view_3d(ctx, x, x->ne[0], x->ne[1], x->ne[2], x->nb[1], x->nb[2], offset * 1);  // [N * n_head, L, d_head/2]
+-        x_0            = ggml_reshape_4d(ctx, x_0, 1, x_0->ne[0], x_0->ne[1], x_0->ne[2]);                    // [N * n_head, L, d_head/2, 1]
+-        x_1            = ggml_reshape_4d(ctx, x_1, 1, x_1->ne[0], x_1->ne[1], x_1->ne[2]);                    // [N * n_head, L, d_head/2, 1]
+-        auto temp_x    = ggml_new_tensor_4d(ctx, x_0->type, 2, x_0->ne[1], x_0->ne[2], x_0->ne[3]);
+-        x_0            = ggml_repeat(ctx, x_0, temp_x);  // [N * n_head, L, d_head/2, 2]
+-        x_1            = ggml_repeat(ctx, x_1, temp_x);  // [N * n_head, L, d_head/2, 2]
+-
+-        pe        = ggml_cont(ctx, ggml_permute(ctx, pe, 3, 0, 1, 2));  // [2, L, d_head/2, 2]
+-        offset    = pe->nb[2] * pe->ne[2];
+-        auto pe_0 = ggml_view_3d(ctx, pe, pe->ne[0], pe->ne[1], pe->ne[2], pe->nb[1], pe->nb[2], offset * 0);  // [L, d_head/2, 2]
+-        auto pe_1 = ggml_view_3d(ctx, pe, pe->ne[0], pe->ne[1], pe->ne[2], pe->nb[1], pe->nb[2], offset * 1);  // [L, d_head/2, 2]
+-
+-        auto x_out = ggml_add_inplace(ctx, ggml_mul(ctx, x_0, pe_0), ggml_mul(ctx, x_1, pe_1));  // [N * n_head, L, d_head/2, 2]
++
++        pe     = ggml_cont(ctx, ggml_permute(ctx, pe, 3, 0, 1, 2));  // [2, L, d_head/2, 2]
++        offset = pe->nb[2] * pe->ne[2];
++
++        // Computing each output component separately lets the [L, d_head/2] coefficients broadcast over
++        // heads, instead of repeating x along a size-1 innermost dim (very slow on some backends, e.g. Hexagon).
++        // out_j = x_0 * pe[k=0][j] + x_1 * pe[k=1][j], same arithmetic order as the repeat-based form.
++        auto pe_coef = [&](int k, int j) {
++            auto c = ggml_view_3d(ctx, pe, 1, pe->ne[1], pe->ne[2], pe->nb[1], pe->nb[2], offset * k + pe->nb[0] * j);
++            return ggml_reshape_3d(ctx, ggml_cont(ctx, c), pe->ne[1], pe->ne[2], 1);  // [1, L, d_head/2]
++        };
++        auto out_0 = ggml_add(ctx, ggml_mul(ctx, x_0, pe_coef(0, 0)), ggml_mul(ctx, x_1, pe_coef(1, 0)));
++        auto out_1 = ggml_add(ctx, ggml_mul(ctx, x_0, pe_coef(0, 1)), ggml_mul(ctx, x_1, pe_coef(1, 1)));
++        out_0      = ggml_reshape_4d(ctx, out_0, out_0->ne[0], out_0->ne[1], out_0->ne[2], 1);
++        out_1      = ggml_reshape_4d(ctx, out_1, out_1->ne[0], out_1->ne[1], out_1->ne[2], 1);
++
++        auto x_out = ggml_concat(ctx, out_0, out_1, 3);                        // [2, N * n_head, L, d_head/2]
++        x_out      = ggml_cont(ctx, ggml_permute(ctx, x_out, 1, 2, 3, 0));      // [N * n_head, L, d_head/2, 2]
+         if (!rope_interleaved) {
+             x_out = ggml_cont(ctx, ggml_permute(ctx, x_out, 1, 0, 2, 3));  // [N * n_head, L, x, d_head/2]
+         }
