@@ -23,22 +23,21 @@ Dell XPS 13 9345（Snapdragon X Elite X1E80100、RAM 64GB）、通常の Windows
 |---|---:|---:|---:|---:|
 | FLUX.2 klein 4B | 4 | **50.5〜52.3 秒**（DiT 34.8〜36.6 秒） | 117.4〜137.1 秒（DiT 97.3〜98.8 秒） | 約 2.5 倍 |
 | Z-Image-Turbo | 8 | **87.5〜91.7 秒**（DiT 75.8〜79.0 秒） | 238.8〜239.9 秒（DiT 213.7〜215.7 秒） | 約 2.7 倍 |
-| Krea2-Turbo-HD | 8 | **249.5〜252.0 秒**（DiT 226.0〜234.4 秒） | 629.9〜645.7 秒（DiT 597.3〜613.7 秒） | 約 2.5 倍 |
 
 時間は 1 枚あたりの合計です。NPU で計算しているのは DiT だけで、テキストエンコーダ（TE）と VAE は CPU です。
 
 ### 生成例
 
-プロンプト（3 モデル共通）：
+プロンプト（共通）：
 
 ```
 A cute cat sitting in front of a small closed Japanese shop, a hand-written paper sign on the shutter that says "臨時休業", warm evening light, photo
 ```
 
-| Z-Image-Turbo（NPU、8 ステップ） | Krea2-Turbo-HD（NPU、8 ステップ） |
-|:---:|:---:|
-| ![Z-Image-Turbo](images/zimage_npu.png) | ![Krea2-Turbo-HD](images/krea2_npu.png) |
-| 「臨」がわずかに崩れた | 「臨」がわずかに崩れた |
+| Z-Image-Turbo（NPU、8 ステップ） |
+|:---:|
+| ![Z-Image-Turbo](images/zimage_npu.png) |
+| 「臨」がわずかに崩れた |
 
 FLUX.2 klein 4B の CPU 版と NPU 版です。構図は同じですが、窓や小物などの細部が違います（理由は[計測条件の詳細](#計測条件の詳細)）。klein は漢字を正しく描けないモデルです。
 
@@ -57,13 +56,12 @@ FLUX.2 klein 4B の CPU 版と NPU 版です。構図は同じですが、窓や
 
 ### メモリ
 
-生成中に PC 全体で増えたメモリのピークです。**32GB の PC なら、どのモデルも余裕を持って動きます。**
+生成中に PC 全体で増えたメモリのピークです。**32GB の PC なら余裕を持って動きます。**
 
 | モデル | 増えたメモリ（ピーク） | モデルファイルの合計（DiT＋TE＋VAE） |
 |---|---:|---:|
 | FLUX.2 klein 4B | 5.8 GB | 4.7 GB |
 | Z-Image-Turbo | 7.4 GB | 5.8 GB |
-| Krea2-Turbo-HD | 11.1 GB | 9.2 GB |
 
 目安は「モデルファイルの合計＋1.5〜2GB」です。sd-cli のプロセス単体の数字（1.5〜2.0GB）は、NPU との共有メモリが含まれないため小さく出ます。16GB の PC でも klein と Z-Image は動く見込みですが、確認していません。
 
@@ -73,7 +71,7 @@ FLUX.2 klein 4B の CPU 版と NPU 版です。構図は同じですが、窓や
 |---|---|---:|
 | Hexagon SDK | `C:\Qualcomm\Hexagon_SDK` | ダウンロード 約 818MB、展開後 約 3.25GB |
 | 作業フォルダ（llama.cpp と stable-diffusion.cpp のソース、GenieX SDK、ビルド成果物） | `%USERPROFILE%\snapdragon-npu-work` | 約 1.4GB |
-| モデルファイル | 好きな場所（`-ModelDir` で指定） | 1 モデルあたり 4.7〜9.2GB（上の表） |
+| モデルファイル | 好きな場所（`-ModelDir` で指定） | klein と Z-Image の一式で約 8.9GB |
 | Visual Studio などのツール | 各ツールの既定の場所 | <!-- TODO: 作者が記入 --> |
 
 Hexagon SDK と作業フォルダの大きさは、作者の PC での実測です（作業フォルダは、ブラウザ用の画面もビルドした状態）。
@@ -98,14 +96,10 @@ hf download Zimo4165/SIGN-models --local-dir C:\sd-models
 
 `hf` コマンドがない場合は、先に `pip install -U huggingface_hub` を実行してください。ブラウザで 1 ファイルずつダウンロードしても構いません。
 
-Krea2 と Qwen-Image-2.1 の入手先は、stable-diffusion.cpp の各モデルの説明文書（固定コミット `c92d73c`）に書かれているものです。
-
 | `-Model` | 拡散モデル | テキストエンコーダ | VAE | 既定ステップ |
 |---|---|---|---|---:|
 | `klein` | `flux-2-klein-4b-Q4_0.gguf` | `Qwen3-4B-Instruct-2507-Q4_K_M.gguf` | `flux2-vae.safetensors` | 4 |
 | `zimage` | `z-image-turbo-Q4_0.gguf` | `Qwen3-4B-Instruct-2507-Q4_K_M.gguf` | `ae.safetensors` | 8 |
-| `krea2` | `Krea2-Turbo-HD-V1-Q4_0.gguf` | `Qwen3-VL-4B-Instruct-Uncensored-abliterated.Q4_0.gguf` | `wan_2.1_vae.safetensors` | 8 |
-| `qwen21` | `qwen_image_2.1-Q4_0.gguf` | `Qwen3VL-8B-Instruct-Q4_K_M.gguf` | `qwen_image_2.1_vae_bf16.safetensors` | 20 |
 
 **FLUX.2 klein 4B**（[sd.cpp の説明](https://github.com/leejet/stable-diffusion.cpp/blob/c92d73c408515c94beef32161bb5960764fde7a0/docs/flux2.md)）
 
@@ -119,19 +113,16 @@ Krea2 と Qwen-Image-2.1 の入手先は、stable-diffusion.cpp の各モデル�
 - テキストエンコーダ：klein と同じ `Qwen3-4B-Instruct-2507-Q4_K_M.gguf`
 - VAE：`ae.safetensors`（SIGN-models に同梱。元は [black-forest-labs/FLUX.1-schnell](https://huggingface.co/black-forest-labs/FLUX.1-schnell)）。Z-Image は **FLUX.1 の VAE をそのまま使います**。klein 用の `flux2-vae.safetensors`（FLUX.2 の VAE）とは別物なので、取り違えないでください。
 
-**Krea2-Turbo-HD**（[sd.cpp の説明](https://github.com/leejet/stable-diffusion.cpp/blob/c92d73c408515c94beef32161bb5960764fde7a0/docs/krea2.md)）
-
-- 拡散モデル：`Krea2-Turbo-HD-V1-Q4_0.gguf` <!-- TODO: 作者が記入（入手先） -->。sd.cpp の説明にある Krea-2 Turbo の GGUF（[realrebelai/KREA-2_GGUFs](https://huggingface.co/realrebelai/KREA-2_GGUFs) の `TURBO/`）には Q4_0 がなく、Q4_K_M などで NPU が動くかは確認していません。
-- テキストエンコーダ：この手順では `Qwen3-VL-4B-Instruct-Uncensored-abliterated.Q4_0.gguf` で確認しました <!-- TODO: 作者が記入（入手先） -->。sd.cpp の説明では、通常版の [Qwen/Qwen3-VL-4B-Instruct-GGUF](https://huggingface.co/Qwen/Qwen3-VL-4B-Instruct-GGUF)（`Qwen3VL-4B-Instruct-Q4_K_M.gguf`）が指定されています。**ただし通常版では、NPU で生成すると横帯のノイズが出ます**（CPU では正常。Q4_0 に変換しても直りません）。原因は調査中です（[既知の問題](#既知の問題)）。
-- VAE：[Comfy-Org/Wan_2.1_ComfyUI_repackaged](https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged) の `split_files/vae/wan_2.1_vae.safetensors`
-
-**Qwen-Image-2.1**（[sd.cpp の説明](https://github.com/leejet/stable-diffusion.cpp/blob/c92d73c408515c94beef32161bb5960764fde7a0/docs/qwen_image_2.1.md)）。NPU では帯状のノイズが出るので、今は `-Cpu` で使ってください（[既知の問題](#既知の問題)）。
-
-- 拡散モデル：[leejet/Qwen-Image-2.1-GGUF](https://huggingface.co/leejet/Qwen-Image-2.1-GGUF) の `qwen_image_2.1-Q4_0.gguf`
-- テキストエンコーダ：[Qwen/Qwen3-VL-8B-Instruct-GGUF](https://huggingface.co/Qwen/Qwen3-VL-8B-Instruct-GGUF) の `Qwen3VL-8B-Instruct-Q4_K_M.gguf`
-- VAE：[Comfy-Org/Qwen-Image-2.1](https://huggingface.co/Comfy-Org/Qwen-Image-2.1) の `vae/qwen_image_2.1_vae_bf16.safetensors`
-
 **拡散モデルは Q4_0 を使ってください。** NPU の行列演算（HMX）が扱える重みの型は Q4_0 / Q4_1 / Q8_0 / Q4_K / Q6_K / IQ4_NL / MXFP4 / F16 / F32 です（llama.cpp のソースで確認）。Q4_0 で動作と速度を確認しています。
+
+### そのほかのモデル（試験的）
+
+スクリプトは `-Model krea2`（Krea2-Turbo-HD）と `-Model qwen21`（Qwen-Image-2.1）にも対応していますが、どちらも**動作を保証できる状態ではありません**。モデルファイルも配布していません。
+
+- **Krea2-Turbo-HD**：NPU で 1 枚約 250 秒（CPU の約 2.5 倍）、メモリは 11.1GB 増えました。ただし sd.cpp の説明にある通常版のテキストエンコーダ（Qwen3-VL-4B-Instruct）では、NPU で横帯のノイズが出ます（[既知の問題](#既知の問題)）。
+- **Qwen-Image-2.1**：NPU では帯状のノイズが出るので、`-Cpu` で使ってください。
+
+入手先は stable-diffusion.cpp の説明（[Krea2](https://github.com/leejet/stable-diffusion.cpp/blob/c92d73c408515c94beef32161bb5960764fde7a0/docs/krea2.md) ／ [Qwen-Image-2.1](https://github.com/leejet/stable-diffusion.cpp/blob/c92d73c408515c94beef32161bb5960764fde7a0/docs/qwen_image_2.1.md)）を見てください。ファイル名が違うときは `-Diffusion` / `-Llm` / `-Vae` で指定します。
 
 ## 手順
 
@@ -205,11 +196,11 @@ Set-ExecutionPolicy -Scope Process Bypass
 
 | 引数 | 既定値 | 説明 |
 |---|---|---|
-| `-Model` | `klein` | `klein` / `zimage` / `krea2` / `qwen21`。ファイル名と既定のステップ数・ガイダンスが決まります |
+| `-Model` | `klein` | `klein` / `zimage`（試験的に `krea2` / `qwen21`）。ファイル名と既定のステップ数・ガイダンスが決まります |
 | `-ModelDir` | `%USERPROFILE%\sd-models` | モデルファイルを置いたフォルダ |
 | `-Prompt` | `a lovely cat` | プロンプト |
 | `-Width` / `-Height` | `512` / `512` | 画像の幅と高さ |
-| `-Steps` | モデルごと（4 / 8 / 8 / 20） | ステップ数。0 ならモデルの既定値 |
+| `-Steps` | モデルごと（klein 4 / Z-Image 8） | ステップ数。0 ならモデルの既定値 |
 | `-Seed` | `42` | シード |
 | `-Out` | 今いるフォルダの `output.png` | 保存先のファイル名 |
 | `-Diffusion` / `-Llm` / `-Vae` | `-ModelDir` と `-Model` から決まる | ファイルを個別に指定するとき |
@@ -217,7 +208,7 @@ Set-ExecutionPolicy -Scope Process Bypass
 | `-Threads` | CPU の論理コア数 | CPU で計算する部分のスレッド数 |
 
 - **ネガティブプロンプトは未対応**です（このスクリプトには指定する引数がありません）。
-- CFG とガイダンスはモデルごとに固定です（klein：CFG 1、Z-Image：CFG 1・ガイダンス 3.5、Krea2：CFG 1・ガイダンス 1.0、Qwen-Image-2.1：CFG 6.0）。
+- CFG とガイダンスはモデルごとに固定です（klein：CFG 1、Z-Image：CFG 1・ガイダンス 3.5）。
 
 ### NPU で動いているか確かめる
 
@@ -269,7 +260,7 @@ $env:GGML_HEXAGON_OPFILTER = "CONCAT|CONT"
 ## 既知の問題
 
 - **Qwen-Image-2.1 で画像の横一列に帯状のノイズが出る**：署名済み構成と付録 A の構成の両方で、ステップ数（20 / 30）に関係なく同じ位置に同じ形で出ました。NPU ライブラリの版によらないので、両方に共通する部分に原因があると見ていますが、未特定です。Qwen-Image-2.1 は当面 `-Cpu` で使ってください（NPU では 1 枚 659 秒、メモリの増加は 11.2GB でした）。
-  - 同じ形の帯は、**Krea2 のテキストエンコーダを通常版の Qwen3-VL-4B-Instruct にしたとき**にも出ます。abliterated 版では出ず、CPU ではどちらも正常です。テキストエンコーダの出力の中身によって、NPU 側の計算（FP16）があふれている可能性があります。
+  - 同じ形の帯は、Krea2 に通常版の Qwen3-VL-4B-Instruct を使ったときにも出ます（CPU では正常）。テキストエンコーダの出力によって NPU 側の計算（FP16）があふれている可能性があります。
 - **NPU の CONCAT / CONT が遅い**：`GGML_HEXAGON_OPFILTER` で CPU に回して回避しています。
 - **VAE と TE は CPU**：NPU にも載せられますが、現状は逆効果です（付録 A の構成、klein、512²）。
   - TE を NPU（`te=HTP0`）：7.1 秒（CPU は約 4 秒）。画像は正常ですが、FP16 計算のため細部が変わります
@@ -299,8 +290,7 @@ $env:GGML_HEXAGON_OPFILTER = "CONCAT|CONT"
 - 512×512、seed 42、すべて同じプロンプト。NPU と CPU を NPU→CPU→CPU→NPU の順に 2 回ずつ、各回の前に 120 秒休ませて測り、範囲で示します。
 - 時間は 1 枚あたりの合計（テキストエンコーダ・DiT・VAE）です。NPU で計算しているのは DiT だけで、テキストエンコーダ（TE）と VAE は CPU です。
 - CPU の比較対象は、WSL2 上の stable-diffusion.cpp（12 スレッド）です。同じスレッド数なら、Windows ネイティブ版より WSL2 版の方が 13〜19% 速かったため、速い方と比べています。
-- Krea2 は、GenieX 版の NPU ライブラリで落ちる大きな行列積を CPU に回しているため、倍率が伸びにくくなっています（下の「何が効いたか」）。
-- NPU 側を自分でビルドした新しい版にすると、さらに速くなります（klein の DiT 23〜25 秒、Krea2 の DiT 約 92 秒）。ただしテストモードが必要です（付録 A）。
+- NPU 側を自分でビルドした新しい版にすると、さらに速くなります（klein の DiT 23〜25 秒）。ただしテストモードが必要です（付録 A）。
 - 生成例の klein の CPU 版は、比較対象の WSL2 版（ビルドが別）で作ったもので、NPU の FP16 計算による差と、ビルドの違いによる差の両方を含みます。同じビルドで CPU と NPU を比べたときの差は、画素あたり平均 1.7/255 でした。
 
 ### 何が効いたか
